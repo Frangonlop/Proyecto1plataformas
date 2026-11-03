@@ -97,11 +97,4 @@ public class nivel1 : MonoBehaviour
             warning.SetActive(false);
         }
     }
-
-    public void ReiniciarEscena()
-    {
-        SceneManager.LoadScene(
-            SceneManager.GetActiveScene().buildIndex
-        );
-    }
 }

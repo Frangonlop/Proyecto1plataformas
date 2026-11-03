@@ -1,6 +1,7 @@
 
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class nivel2 : MonoBehaviour
 {
@@ -9,6 +10,7 @@ public class nivel2 : MonoBehaviour
     [SerializeField] private TextMeshProUGUI lifesTxt;
     [SerializeField] private GameObject winPanel;
     [SerializeField] private GameObject gameOver;
+    [SerializeField] private GameObject warning;
 
     [Header("Victoria")]
     [SerializeField] private ParticleSystem fireworks;
@@ -57,6 +59,10 @@ public class nivel2 : MonoBehaviour
         {
             ComprobarVictoria();
         }
+        if (collision.CompareTag("death"))
+        {
+            PerderVida();
+        }
     }
 
     private void OnTriggerStay2D(Collider2D collision)
@@ -65,6 +71,14 @@ public class nivel2 : MonoBehaviour
         if (collision.CompareTag("goal"))
         {
             ComprobarVictoria();
+        }
+        if (collision.CompareTag("warning"))
+        {
+            warning.SetActive(true);
+        }
+        else
+        {
+            warning.SetActive(false);
         }
     }
 
