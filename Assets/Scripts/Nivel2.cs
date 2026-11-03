@@ -1,101 +1,146 @@
 
 using TMPro;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 public class nivel2 : MonoBehaviour
 {
+    [Header("Interfaz")]
     [SerializeField] private TextMeshProUGUI panelPuntuacion;
     [SerializeField] private TextMeshProUGUI lifesTxt;
+    [SerializeField] private GameObject winPanel;
+    [SerializeField] private GameObject gameOver;
 
-    [SerializeField] private int puntuacion = 10;
+    [Header("Victoria")]
+    [SerializeField] private ParticleSystem fireworks;
+
+    [Header("Vidas")]
     [SerializeField] private int lifes = 3;
-    [SerializeField] ParticleSystem fireworks;
-    private bool yaReproducido = false;
-    [SerializeField] GameObject winPanel;
-    [SerializeField] GameObject gameOver;
 
-
-    [SerializeField] float velocidadX = 0.1f;
-    [SerializeField] float velocidadY = 1.1f;
-    private float movimientox = 0f;
-    private float movimientoy = 0f;
     private Rigidbody2D rb;
-    private bool tocandoSuelo = false;
     private Vector3 posicionOriginal;
+    private bool yaReproducido = false;
+    private int puntuacion = 0;
+
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
+
         posicionOriginal = transform.position;
+
         Time.timeScale = 1f;
-        panelPuntuacion.text = "Puntuación: " + puntuacion;
-        lifesTxt.text = "Vidas: " + lifes;
-    }
 
-    private void Update()
-    {
-        // En cada ciclo del juego veo si hay que mover el personaje
-        movimientox = Input.GetAxis("Horizontal");
-        movimientoy = Input.GetAxis("Vertical");
-        if (!tocandoSuelo)
-            movimientoy = 0f;
+        // Recuperar la puntuación del nivel anterior
+        puntuacion = DatosJuego.puntuacion;
 
-        rb.AddForce(new Vector2(movimientox * velocidadX, movimientoy * velocidadY), ForceMode2D.Impulse);
+        if (panelPuntuacion != null)
+        {
+            panelPuntuacion.text =
+                "Puntuación: " + puntuacion;
+        }
+
+        if (lifesTxt != null)
+        {
+            lifesTxt.text = "Vidas: " + lifes;
+        }
+
+        if (winPanel != null)
+            winPanel.SetActive(false);
+
+        if (gameOver != null)
+            gameOver.SetActive(false);
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if (collision.gameObject.tag == "Suelo")
-            tocandoSuelo = true;
+        // Comprobar llegada a la meta
+        if (collision.CompareTag("goal"))
+        {
+            ComprobarVictoria();
+        }
     }
 
     private void OnTriggerStay2D(Collider2D collision)
     {
-        if (collision.gameObject.tag == "goal")
+        // Comprobar si sigue dentro de la meta
+        if (collision.CompareTag("goal"))
         {
-            if (yaReproducido) return;
-            if (puntuacion == 10)
-            {
+            ComprobarVictoria();
+        }
+    }
+
+    private void ComprobarVictoria()
+    {
+        if (yaReproducido)
+            return;
+
+        if (puntuacion >= 10)
+        {
+            yaReproducido = true;
+
+            if (winPanel != null)
                 winPanel.SetActive(true);
+
+            if (fireworks != null)
                 fireworks.Play();
-                yaReproducido = true;
+
+            // Detener al personaje
+            if (rb != null)
+            {
                 rb.linearVelocity = Vector2.zero;
                 rb.constraints = RigidbodyConstraints2D.FreezeAll;
             }
         }
     }
-    public void OnTriggerExit2D(Collider2D collision)
-    {
-        if (collision.gameObject.tag == "Suelo")
-            tocandoSuelo = false;
 
-        if (collision.gameObject.tag == "goal")
+    private void OnTriggerExit2D(Collider2D collision)
+    {
+        if (collision.CompareTag("goal"))
         {
-            if (puntuacion == 10)
-            {
+            if (!yaReproducido && winPanel != null)
                 winPanel.SetActive(false);
-            }
         }
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-
-        if (collision.gameObject.tag == "death")
+        // Comprobar si toca una zona mortal
+        if (collision.gameObject.CompareTag("death"))
         {
-            transform.position = posicionOriginal;
-            if (lifes > 0)
-            {
-                lifes--;
-                DatosJuego.vidas = lifes;
-                lifesTxt.text = "Vidas: " + lifes;
-            }
-            if (lifes == 0)
-            {
-                gameOver.SetActive(true);
-                Time.timeScale = 0f;
-            }
+            PerderVida();
+        }
+    }
 
+    private void PerderVida()
+    {
+        if (lifes <= 0)
+            return;
+
+        lifes--;
+
+        DatosJuego.vidas = lifes;
+
+        if (lifesTxt != null)
+        {
+            lifesTxt.text = "Vidas: " + lifes;
+        }
+
+        if (lifes == 0)
+        {
+            if (gameOver != null)
+                gameOver.SetActive(true);
+
+            Time.timeScale = 0f;
+        }
+        else
+        {
+            // Reaparecer en la posición inicial
+            transform.position = posicionOriginal;
+
+            if (rb != null)
+            {
+                rb.linearVelocity = Vector2.zero;
+                rb.angularVelocity = 0f;
+            }
         }
     }
 }
