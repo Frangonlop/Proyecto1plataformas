@@ -2,12 +2,13 @@
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class nivel2 : MonoBehaviour
 {
     [Header("Interfaz")]
     [SerializeField] private TextMeshProUGUI panelPuntuacion;
-    [SerializeField] private TextMeshProUGUI lifesTxt;
+    [SerializeField] private Slider barraVida;
     [SerializeField] private GameObject winPanel;
     [SerializeField] private GameObject gameOver;
     [SerializeField] private GameObject warning;
@@ -16,7 +17,23 @@ public class nivel2 : MonoBehaviour
     [SerializeField] private ParticleSystem fireworks;
 
     [Header("Vidas")]
-    [SerializeField] private int lifes = 3;
+    private int lifes = 3;
+    private const int vidasMaximas = 3;
+
+    [Header("Sonidos")]
+    [SerializeField] AudioSource musicGameOver;
+    [SerializeField] AudioSource backMusic;
+    [SerializeField] AudioSource damageSound;
+    [SerializeField] AudioSource eliminarSound;
+
+    [Header("Invulnerabilidad")]
+    [SerializeField] private SpriteRenderer spriteJugador;
+    [SerializeField] private float tiempoInvulnerable = 1.5f;
+    [SerializeField] private float intervaloParpadeo = 0.1f;
+
+    private bool esInvulnerable = false;
+    private float temporizadorInvulnerabilidad = 0f;
+    private float temporizadorParpadeo = 0f;
 
     private Rigidbody2D rb;
     private Vector3 posicionOriginal;
@@ -31,8 +48,9 @@ public class nivel2 : MonoBehaviour
 
         Time.timeScale = 1f;
 
-        // Recuperar la puntuación del nivel anterior
+        // Recuperar puntuación y vidas del nivel anterior
         puntuacion = DatosJuego.puntuacion;
+        lifes = Mathf.Clamp(DatosJuego.vidas, 0, vidasMaximas);
 
         if (panelPuntuacion != null)
         {
@@ -40,42 +58,86 @@ public class nivel2 : MonoBehaviour
                 "Puntuación: " + puntuacion;
         }
 
-        if (lifesTxt != null)
-        {
-            lifesTxt.text = "Vidas: " + lifes;
-        }
+        ConfigurarBarraVida();
 
         if (winPanel != null)
             winPanel.SetActive(false);
 
         if (gameOver != null)
             gameOver.SetActive(false);
+
+        // Por si el jugador llega sin vidas
+        if (lifes == 0)
+        {
+            MostrarGameOver();
+        }
+    }
+
+    private void Update()
+    {
+        if (esInvulnerable)
+        {
+            temporizadorInvulnerabilidad -= Time.deltaTime;
+            temporizadorParpadeo -= Time.deltaTime;
+
+            if (temporizadorParpadeo <= 0f)
+            {
+                spriteJugador.enabled = !spriteJugador.enabled;
+                temporizadorParpadeo = intervaloParpadeo;
+            }
+
+            if (temporizadorInvulnerabilidad <= 0f)
+            {
+                esInvulnerable = false;
+                spriteJugador.enabled = true;
+            }
+        }
+    }
+    private void ConfigurarBarraVida()
+    {
+        if (barraVida != null)
+        {
+            barraVida.minValue = 0;
+            barraVida.maxValue = vidasMaximas;
+            barraVida.wholeNumbers = true;
+            barraVida.value = lifes;
+        }
+    }
+
+    private void ActualizarBarraVida()
+    {
+        if (barraVida != null)
+        {
+            barraVida.value = lifes;
+        }
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        // Comprobar llegada a la meta
         if (collision.CompareTag("goal"))
         {
             ComprobarVictoria();
         }
+
         if (collision.CompareTag("death"))
         {
             PerderVida();
         }
+
         if (collision.CompareTag("eliminar"))
         {
             Destroy(collision.transform.parent.gameObject);
+            eliminarSound.Play();
         }
     }
 
     private void OnTriggerStay2D(Collider2D collision)
     {
-        // Comprobar si sigue dentro de la meta
         if (collision.CompareTag("goal"))
         {
             ComprobarVictoria();
         }
+
         if (collision.CompareTag("warning"))
         {
             warning.SetActive(true);
@@ -90,7 +152,7 @@ public class nivel2 : MonoBehaviour
     {
         if (yaReproducido)
             return;
-        // Aparición panel de victoria
+
         if (puntuacion >= 10)
         {
             yaReproducido = true;
@@ -101,7 +163,6 @@ public class nivel2 : MonoBehaviour
             if (fireworks != null)
                 fireworks.Play();
 
-            // Detener al personaje
             if (rb != null)
             {
                 rb.linearVelocity = Vector2.zero;
@@ -121,7 +182,6 @@ public class nivel2 : MonoBehaviour
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        // Comprobar si toca una zona mortal
         if (collision.gameObject.CompareTag("death"))
         {
             PerderVida();
@@ -130,24 +190,28 @@ public class nivel2 : MonoBehaviour
 
     private void PerderVida()
     {
+        if (esInvulnerable)
+            return;
+
+        esInvulnerable = true;
+        temporizadorInvulnerabilidad = tiempoInvulnerable;
+        temporizadorParpadeo = intervaloParpadeo;
+        spriteJugador.enabled = false;
+
         if (lifes <= 0)
             return;
 
         lifes--;
 
+        damageSound.Play();
+
         DatosJuego.vidas = lifes;
 
-        if (lifesTxt != null)
-        {
-            lifesTxt.text = "Vidas: " + lifes;
-        }
+        ActualizarBarraVida();
 
         if (lifes == 0)
         {
-            if (gameOver != null)
-                gameOver.SetActive(true);
-
-            Time.timeScale = 0f;
+            MostrarGameOver();
         }
         else
         {
@@ -160,5 +224,16 @@ public class nivel2 : MonoBehaviour
                 rb.angularVelocity = 0f;
             }
         }
+    }
+
+    private void MostrarGameOver()
+    {
+        if (gameOver != null)
+            gameOver.SetActive(true);
+
+        backMusic.Stop();
+        musicGameOver.Play();
+
+        Time.timeScale = 0f;
     }
 }

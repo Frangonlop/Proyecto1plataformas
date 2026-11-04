@@ -22,7 +22,10 @@ public class playerControl : MonoBehaviour
     [SerializeField] TextMeshProUGUI panelRetardoSalto;
 
     [SerializeField] private ParticleSystem efectoMoneda;
+    [SerializeField] private AudioSource sonidoMoneda;
+    public AudioClip blinMoneda;
 
+    [SerializeField] private AudioSource sonidoSalto;
     private Rigidbody2D rb;
 
 
@@ -154,7 +157,7 @@ public class playerControl : MonoBehaviour
                     rb.linearVelocity.x,
                     fuerzaSalto
                 );
-
+                sonidoSalto.Play();
                 yaHaSaltado = true;
                 tocandoSuelo = false;
 
@@ -166,6 +169,7 @@ public class playerControl : MonoBehaviour
                     rb.linearVelocity.x,
                     fuerzaSalto
                 );
+                sonidoSalto.Play();
 
                 dobleSaltoDisponible = false;
                 tiempoRecarga = tiempoRecargaDobleSalto;
@@ -182,7 +186,7 @@ public class playerControl : MonoBehaviour
         {
             efectoMoneda.transform.position = collision.transform.position;
             efectoMoneda.Play();
-            
+            sonidoMoneda.PlayOneShot(blinMoneda);
             Destroy(collision.gameObject);
             puntuacion++;
             DatosJuego.puntuacion++;
