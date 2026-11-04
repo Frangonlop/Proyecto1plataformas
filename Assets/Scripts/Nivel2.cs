@@ -25,6 +25,7 @@ public class nivel2 : MonoBehaviour
     [SerializeField] AudioSource backMusic;
     [SerializeField] AudioSource damageSound;
     [SerializeField] AudioSource eliminarSound;
+    [SerializeField] AudioSource winMusic;
 
     [Header("Invulnerabilidad")]
     [SerializeField] private SpriteRenderer spriteJugador;
@@ -156,7 +157,8 @@ public class nivel2 : MonoBehaviour
         if (puntuacion >= 10)
         {
             yaReproducido = true;
-
+            backMusic.Stop();
+            winMusic.Play();
             if (winPanel != null)
                 winPanel.SetActive(true);
 
