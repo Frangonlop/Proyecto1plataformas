@@ -63,4 +63,10 @@ public class GameController : MonoBehaviour
             SceneManager.GetActiveScene().buildIndex
         );
     }
+
+    public void ReiniciarJuego()
+    {
+        Time.timeScale = 1f;
+        SceneManager.LoadScene("Nivel1");
+    }
 }

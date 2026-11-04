@@ -63,6 +63,10 @@ public class nivel2 : MonoBehaviour
         {
             PerderVida();
         }
+        if (collision.CompareTag("eliminar"))
+        {
+            Destroy(collision.transform.parent.gameObject);
+        }
     }
 
     private void OnTriggerStay2D(Collider2D collision)
@@ -86,7 +90,7 @@ public class nivel2 : MonoBehaviour
     {
         if (yaReproducido)
             return;
-
+        // Aparición panel de victoria
         if (puntuacion >= 10)
         {
             yaReproducido = true;

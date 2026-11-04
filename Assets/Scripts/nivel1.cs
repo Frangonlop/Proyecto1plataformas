@@ -23,7 +23,7 @@ public class nivel1 : MonoBehaviour
 
         Time.timeScale = 1f;
 
-        DatosJuego.vidas = lifes;
+        DatosJuego.ReiniciarDatos();
     }
 
     private void OnCollisionEnter2D(Collision2D collision)

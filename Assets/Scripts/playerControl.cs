@@ -21,7 +21,14 @@ public class playerControl : MonoBehaviour
     [SerializeField] TextMeshProUGUI panelTiempo;
     [SerializeField] TextMeshProUGUI panelRetardoSalto;
 
+    [SerializeField] private ParticleSystem efectoMoneda;
+
     private Rigidbody2D rb;
+
+
+    [SerializeField] float velocidadHielo = 10f;
+    private bool sobreHielo = false;
+
 
     private float movimientox = 0f;
     private bool tocandoSuelo = false;
@@ -39,8 +46,10 @@ public class playerControl : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
 
-        // Comenzar la recarga al iniciar el nivel
+        // Comenzar la recarga del doble salto al iniciar el nivel
         tiempoRecarga = tiempoRecargaDobleSalto;
+
+        tiempoTotal = DatosJuego.tiempo;
     }
 
     private void OnEnable()
@@ -72,14 +81,15 @@ public class playerControl : MonoBehaviour
             movimientox = inputMovimiento.x;
         }
 
-        // Detectar pulsación del salto
+        // Detectar salto
         if (salto != null && salto.action.WasPressedThisFrame())
         {
             solicitarSalto = true;
         }
 
-        // Contador general del juego
+        // Contador de tiempo del juego
         tiempoTotal += Time.deltaTime;
+        DatosJuego.tiempo = (int)tiempoTotal;
 
         if (panelTiempo != null)
         {
@@ -87,7 +97,7 @@ public class playerControl : MonoBehaviour
                 "Tiempo: " + ((int)tiempoTotal) + " s";
         }
 
-        // Recarga global del doble salto
+        // Recarga del doble salto
         if (!dobleSaltoDisponible)
         {
             tiempoRecarga -= Time.deltaTime;
@@ -121,9 +131,10 @@ public class playerControl : MonoBehaviour
         if (rb == null)
             return;
 
-        // Movimiento horizontal
+        float velocidadActual = sobreHielo ? velocidadHielo : velocidadX;
+
         rb.linearVelocity = new Vector2(
-            movimientox * velocidadX,
+            movimientox * velocidadActual,
             rb.linearVelocity.y
         );
 
@@ -148,7 +159,7 @@ public class playerControl : MonoBehaviour
                 tocandoSuelo = false;
 
             }
-            // Segundo salto, si la recarga global ha terminado
+            // Segundo salto, solo si la recarga de tiempo ha terminado
             else if (yaHaSaltado && dobleSaltoDisponible)
             {
                 rb.linearVelocity = new Vector2(
@@ -169,8 +180,10 @@ public class playerControl : MonoBehaviour
     {
         if (collision.gameObject.CompareTag("moneda"))
         {
+            efectoMoneda.transform.position = collision.transform.position;
+            efectoMoneda.Play();
+            
             Destroy(collision.gameObject);
-
             puntuacion++;
             DatosJuego.puntuacion++;
 
@@ -205,6 +218,22 @@ public class playerControl : MonoBehaviour
         if (collision.gameObject.CompareTag("Suelo"))
         {
             tocandoSuelo = true;
+        }
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("hielo"))
+        {
+            sobreHielo = true;
+        }
+    }
+
+    private void OnCollisionExit2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("hielo"))
+        {
+            sobreHielo = false;
         }
     }
 }
